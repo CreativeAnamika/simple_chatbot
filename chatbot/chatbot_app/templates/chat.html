@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gemini Teacher Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #chat-box {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message {
+            display: flex;
+            margin: 10px 0;
+            align-items: flex-start;
+        }
+
+        .user-msg, .gemini-msg {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .user-msg {
+            background-color: #daf1ff;
+            color: #003366;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+
+        .gemini-msg {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+
+        pre {
+            margin: 0;
+            padding: 8px;
+            background-color: #f7f7f7;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            font-size: 13px;
+            padding: 4px 10px;
+            margin-top: 5px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #input-container {
+            display: flex;
+            margin-top: 15px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Gemini Teacher Chatbot</h2>
+        <div id="chat-box"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Ask your question..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
+
+            const chatBox = document.getElementById("chat-box");
+
+            // Append user message
+            const userMessage = document.createElement("div");
+            userMessage.className = "message";
+            userMessage.innerHTML = `
+                <div class="user-msg"><strong>You:</strong><br>${userInput}</div>
+            `;
+            chatBox.appendChild(userMessage);
+
+            // Create Gemini response placeholder
+            const geminiMessage = document.createElement("div");
+            geminiMessage.className = "message";
+            geminiMessage.innerHTML = `
+                <div class="gemini-msg"><strong>Gemini:</strong><br><pre><code class="gemini-response"></code></pre></div>
+            `;
+            chatBox.appendChild(geminiMessage);
+
+            const geminiSpan = geminiMessage.querySelector(".gemini-response");
+            document.getElementById("user-input").value = "";
+
+            fetch(`/chat/?msg=${encodeURIComponent(userInput)}`)
+                .then(response => {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let markdownBuffer = "";
+
+                    function read() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                addCopyButton(geminiMessage.querySelector(".gemini-msg"), geminiSpan.textContent);
+                                return;
+                            }
+
+                            markdownBuffer += decoder.decode(value);
+                            geminiSpan.textContent = markdownBuffer;
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                            read();
+                        });
+                    }
+
+                    read();
+                });
+        }
+
+        function addCopyButton(container, textToCopy) {
+            const copyButton = document.createElement("button");
+            copyButton.textContent = "Copy";
+            copyButton.className = "copy-btn";
+            copyButton.onclick = () => {
+                navigator.clipboard.writeText(textToCopy);
+                copyButton.textContent = "Copied!";
+                setTimeout(() => copyButton.textContent = "Copy", 2000);
+            };
+            container.appendChild(copyButton);
+        }
+    </script>
+</body>
+</html>
