@@ -76,12 +76,13 @@
             font-size: 13px;
             padding: 4px 10px;
             margin-top: 5px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
+            background-color: #333;         /* Dark background */
+            color: #fff;                    /* White text */
+            border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-
+            transition: background-color 0.3s;
+          }
         #input-container {
             display: flex;
             margin-top: 15px;
@@ -119,6 +120,7 @@
         <div id="input-container">
             <input type="text" id="user-input" placeholder="Ask your question..." />
             <button onclick="sendMessage()">Send</button>
+            <button onclick="sendWebSearch()">Search with Web</button>
         </div>
     </div>
 
@@ -126,52 +128,63 @@
         function sendMessage() {
             const userInput = document.getElementById("user-input").value.trim();
             if (!userInput) return;
-
+    
+            processMessage(userInput);  // Use shared helper function
+        }
+    
+        function sendWebSearch() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
+    
+            processMessage("search: " + userInput);  // Prepend search: automatically
+        }
+    
+        function processMessage(finalQuery) {
             const chatBox = document.getElementById("chat-box");
-
-            // Append user message
+    
+            // User message UI
             const userMessage = document.createElement("div");
             userMessage.className = "message";
             userMessage.innerHTML = `
-                <div class="user-msg"><strong>You:</strong><br>${userInput}</div>
+                <div class="user-msg"><strong>You:</strong><br>${finalQuery}</div>
             `;
             chatBox.appendChild(userMessage);
-
-            // Create Gemini response placeholder
+    
+            // Gemini placeholder UI
             const geminiMessage = document.createElement("div");
             geminiMessage.className = "message";
             geminiMessage.innerHTML = `
                 <div class="gemini-msg"><strong>Gemini:</strong><br><pre><code class="gemini-response"></code></pre></div>
             `;
             chatBox.appendChild(geminiMessage);
-
+    
             const geminiSpan = geminiMessage.querySelector(".gemini-response");
             document.getElementById("user-input").value = "";
-
-            fetch(`/chat/?msg=${encodeURIComponent(userInput)}`)
+    
+            fetch(`/chat/?msg=${encodeURIComponent(finalQuery)}`)
                 .then(response => {
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
                     let markdownBuffer = "";
-
+    
                     function read() {
                         reader.read().then(({ done, value }) => {
                             if (done) {
                                 addCopyButton(geminiMessage.querySelector(".gemini-msg"), geminiSpan.textContent);
                                 return;
                             }
-
+    
                             markdownBuffer += decoder.decode(value);
                             geminiSpan.textContent = markdownBuffer;
                             chatBox.scrollTop = chatBox.scrollHeight;
                             read();
                         });
                     }
-
+    
                     read();
                 });
         }
-
+    
         function addCopyButton(container, textToCopy) {
             const copyButton = document.createElement("button");
             copyButton.textContent = "Copy";
@@ -183,6 +196,15 @@
             };
             container.appendChild(copyButton);
         }
+    
+        // Enter key triggers sendMessage
+        document.getElementById("user-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
     </script>
+    
 </body>
 </html>
