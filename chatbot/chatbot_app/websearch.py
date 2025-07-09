@@ -26,7 +26,7 @@ def perform_web_search(query: str) -> str:
     # Format the top 3 results nicely
     output = "**Top Web Results:**\n\n"
     for item in result["organic"][:3]:
-        output += f"🔹 [{item.get('title')}]({item.get('link')})\n"
+        output += f"[{item.get('title')}]({item.get('link')})\n"
         if item.get("snippet"):
             output += f"   {item['snippet']}\n\n"
 

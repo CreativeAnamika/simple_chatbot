@@ -136,7 +136,7 @@
             const userInput = document.getElementById("user-input").value.trim();
             if (!userInput) return;
     
-            processMessage("search: " + userInput);  // Prepend search: automatically
+            processMessage("search: " + userInput);  // Prepend search: automatically--->previously we have to write by our own
         }
     
         function processMessage(finalQuery) {
@@ -197,7 +197,7 @@
             container.appendChild(copyButton);
         }
     
-        // Enter key triggers sendMessage
+        
         document.getElementById("user-input").addEventListener("keydown", function(event) {
             if (event.key === "Enter") {
                 event.preventDefault();
